@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 
 export const createInventoryItem = async (input: CreateInventoryItemInput): Promise<InventoryItem> => {
   try {
-    // Verify location exists before creating inventory item
+    // Verify location exists first to prevent foreign key constraint errors
     const location = await db.select()
       .from(locationsTable)
       .where(eq(locationsTable.id, input.location_id))

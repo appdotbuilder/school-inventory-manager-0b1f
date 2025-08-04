@@ -14,7 +14,7 @@ describe('getInventoryItems', () => {
     expect(result).toEqual([]);
   });
 
-  it('should return all inventory items', async () => {
+  it('should return all inventory items with complete data', async () => {
     // Create test location first
     const locationResult = await db.insert(locationsTable)
       .values({
@@ -24,20 +24,20 @@ describe('getInventoryItems', () => {
       .returning()
       .execute();
 
-    const location = locationResult[0];
+    const locationId = locationResult[0].id;
 
     // Create test inventory items
     await db.insert(inventoryItemsTable)
       .values([
         {
           name: 'Dell Laptop',
-          category: 'electronic',
+          category: 'pc',
           serial_number: 'DL001',
           condition: 'good',
-          location_id: location.id,
+          location_id: locationId,
           location_details: 'Desk 1',
           brand: 'Dell',
-          model: 'Inspiron 15',
+          model: 'Latitude 5520',
           specifications: '16GB RAM, 512GB SSD',
           purchase_date: new Date('2023-01-15'),
           notes: 'Primary work laptop'
@@ -45,15 +45,15 @@ describe('getInventoryItems', () => {
         {
           name: 'Office Chair',
           category: 'furniture',
-          serial_number: 'OC001',
+          serial_number: 'CH001',
           condition: 'damaged',
-          location_id: location.id,
+          location_id: locationId,
           location_details: null,
           brand: null,
           model: null,
           specifications: null,
-          purchase_date: new Date('2022-06-10'),
-          notes: 'Needs wheel replacement'
+          purchase_date: new Date('2022-03-10'),
+          notes: 'Needs new wheels'
         }
       ])
       .execute();
@@ -61,41 +61,42 @@ describe('getInventoryItems', () => {
     const result = await getInventoryItems();
 
     expect(result).toHaveLength(2);
-    
-    // Check first item (Dell Laptop)
+
+    // Verify first item
     const laptop = result.find(item => item.name === 'Dell Laptop');
     expect(laptop).toBeDefined();
-    expect(laptop!.category).toEqual('electronic');
-    expect(laptop!.serial_number).toEqual('DL001');
-    expect(laptop!.condition).toEqual('good');
-    expect(laptop!.location_id).toEqual(location.id);
-    expect(laptop!.location_details).toEqual('Desk 1');
-    expect(laptop!.brand).toEqual('Dell');
-    expect(laptop!.model).toEqual('Inspiron 15');
-    expect(laptop!.specifications).toEqual('16GB RAM, 512GB SSD');
+    expect(laptop!.category).toBe('pc');
+    expect(laptop!.serial_number).toBe('DL001');
+    expect(laptop!.condition).toBe('good');
+    expect(laptop!.location_id).toBe(locationId);
+    expect(laptop!.location_details).toBe('Desk 1');
+    expect(laptop!.brand).toBe('Dell');
+    expect(laptop!.model).toBe('Latitude 5520');
+    expect(laptop!.specifications).toBe('16GB RAM, 512GB SSD');
     expect(laptop!.purchase_date).toBeInstanceOf(Date);
-    expect(laptop!.notes).toEqual('Primary work laptop');
+    expect(laptop!.notes).toBe('Primary work laptop');
+    expect(laptop!.id).toBeDefined();
     expect(laptop!.created_at).toBeInstanceOf(Date);
     expect(laptop!.updated_at).toBeInstanceOf(Date);
 
-    // Check second item (Office Chair)
+    // Verify second item
     const chair = result.find(item => item.name === 'Office Chair');
     expect(chair).toBeDefined();
-    expect(chair!.category).toEqual('furniture');
-    expect(chair!.serial_number).toEqual('OC001');
-    expect(chair!.condition).toEqual('damaged');
-    expect(chair!.location_id).toEqual(location.id);
+    expect(chair!.category).toBe('furniture');
+    expect(chair!.serial_number).toBe('CH001');
+    expect(chair!.condition).toBe('damaged');
+    expect(chair!.location_id).toBe(locationId);
     expect(chair!.location_details).toBeNull();
     expect(chair!.brand).toBeNull();
     expect(chair!.model).toBeNull();
     expect(chair!.specifications).toBeNull();
     expect(chair!.purchase_date).toBeInstanceOf(Date);
-    expect(chair!.notes).toEqual('Needs wheel replacement');
+    expect(chair!.notes).toBe('Needs new wheels');
   });
 
-  it('should handle items from multiple locations', async () => {
-    // Create multiple test locations
-    const locationResults = await db.insert(locationsTable)
+  it('should handle multiple locations correctly', async () => {
+    // Create multiple locations
+    const locations = await db.insert(locationsTable)
       .values([
         { room_name: 'Office', description: 'Main office' },
         { room_name: 'Storage', description: 'Storage room' }
@@ -103,36 +104,34 @@ describe('getInventoryItems', () => {
       .returning()
       .execute();
 
-    const [office, storage] = locationResults;
-
     // Create items in different locations
     await db.insert(inventoryItemsTable)
       .values([
         {
-          name: 'Desktop PC',
-          category: 'pc',
-          serial_number: 'PC001',
+          name: 'Monitor',
+          category: 'electronic',
+          serial_number: 'MON001',
           condition: 'good',
-          location_id: office.id,
-          location_details: 'Workstation 1',
-          brand: 'HP',
-          model: 'ProDesk 600',
-          specifications: '32GB RAM, 1TB SSD',
-          purchase_date: new Date('2023-03-20'),
+          location_id: locations[0].id,
+          location_details: 'Desk 1',
+          brand: 'Samsung',
+          model: 'U28E590D',
+          specifications: '28" 4K',
+          purchase_date: new Date('2023-02-01'),
           notes: null
         },
         {
-          name: 'Spare Monitor',
+          name: 'Old Printer',
           category: 'electronic',
-          serial_number: 'MON001',
+          serial_number: 'PR001',
           condition: 'needs_repair',
-          location_id: storage.id,
+          location_id: locations[1].id,
           location_details: 'Shelf B',
-          brand: 'Samsung',
-          model: '24 inch',
-          specifications: '1920x1080',
-          purchase_date: new Date('2022-11-05'),
-          notes: 'Screen flickering issue'
+          brand: 'HP',
+          model: 'LaserJet',
+          specifications: null,
+          purchase_date: new Date('2020-05-15'),
+          notes: 'Paper jam issue'
         }
       ])
       .execute();
@@ -141,14 +140,10 @@ describe('getInventoryItems', () => {
 
     expect(result).toHaveLength(2);
     
-    const pc = result.find(item => item.name === 'Desktop PC');
-    const monitor = result.find(item => item.name === 'Spare Monitor');
-    
-    expect(pc!.location_id).toEqual(office.id);
-    expect(monitor!.location_id).toEqual(storage.id);
-    
-    // Verify different conditions are handled
-    expect(pc!.condition).toEqual('good');
-    expect(monitor!.condition).toEqual('needs_repair');
+    const monitor = result.find(item => item.name === 'Monitor');
+    const printer = result.find(item => item.name === 'Old Printer');
+
+    expect(monitor!.location_id).toBe(locations[0].id);
+    expect(printer!.location_id).toBe(locations[1].id);
   });
 });

@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 
 export const getInventoryItem = async (id: number): Promise<InventoryItem | null> => {
   try {
-    // Query with location join for complete data
+    // Query with join to get complete item data including location info
     const results = await db.select()
       .from(inventoryItemsTable)
       .innerJoin(locationsTable, eq(inventoryItemsTable.location_id, locationsTable.id))
@@ -17,25 +17,25 @@ export const getInventoryItem = async (id: number): Promise<InventoryItem | null
       return null;
     }
 
-    // Extract inventory item data from joined result
+    // Extract the inventory item data from joined result
     const result = results[0];
-    const inventoryItem = result.inventory_items;
+    const item = result.inventory_items;
 
     return {
-      id: inventoryItem.id,
-      name: inventoryItem.name,
-      category: inventoryItem.category,
-      serial_number: inventoryItem.serial_number,
-      condition: inventoryItem.condition,
-      location_id: inventoryItem.location_id,
-      location_details: inventoryItem.location_details,
-      brand: inventoryItem.brand,
-      model: inventoryItem.model,
-      specifications: inventoryItem.specifications,
-      purchase_date: inventoryItem.purchase_date,
-      notes: inventoryItem.notes,
-      created_at: inventoryItem.created_at,
-      updated_at: inventoryItem.updated_at
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      serial_number: item.serial_number,
+      condition: item.condition,
+      location_id: item.location_id,
+      location_details: item.location_details,
+      brand: item.brand,
+      model: item.model,
+      specifications: item.specifications,
+      purchase_date: item.purchase_date,
+      notes: item.notes,
+      created_at: item.created_at,
+      updated_at: item.updated_at
     };
   } catch (error) {
     console.error('Failed to get inventory item:', error);

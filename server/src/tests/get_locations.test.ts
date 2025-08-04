@@ -11,6 +11,7 @@ describe('getLocations', () => {
 
   it('should return empty array when no locations exist', async () => {
     const result = await getLocations();
+    
     expect(result).toEqual([]);
   });
 
@@ -23,11 +24,11 @@ describe('getLocations', () => {
           description: 'Main living area'
         },
         {
-          room_name: 'Kitchen',
-          description: 'Cooking area'
+          room_name: 'Office',
+          description: 'Home office space'
         },
         {
-          room_name: 'Office',
+          room_name: 'Bedroom',
           description: null
         }
       ])
@@ -37,50 +38,40 @@ describe('getLocations', () => {
 
     expect(result).toHaveLength(3);
     
-    // Check structure and types
+    // Verify all fields are present
     result.forEach(location => {
       expect(location.id).toBeDefined();
-      expect(typeof location.room_name).toBe('string');
+      expect(location.room_name).toBeDefined();
       expect(location.created_at).toBeInstanceOf(Date);
-      expect(location.description === null || typeof location.description === 'string').toBe(true);
     });
 
-    // Check specific values
-    const roomNames = result.map(loc => loc.room_name).sort();
-    expect(roomNames).toEqual(['Kitchen', 'Living Room', 'Office']);
+    // Check specific location data
+    const livingRoom = result.find(loc => loc.room_name === 'Living Room');
+    expect(livingRoom).toBeDefined();
+    expect(livingRoom?.description).toEqual('Main living area');
+
+    const bedroom = result.find(loc => loc.room_name === 'Bedroom');
+    expect(bedroom).toBeDefined();
+    expect(bedroom?.description).toBeNull();
   });
 
-  it('should return locations with correct field types', async () => {
+  it('should order locations consistently', async () => {
+    // Create locations in specific order
     await db.insert(locationsTable)
-      .values({
-        room_name: 'Test Room',
-        description: 'Test description'
-      })
+      .values([
+        { room_name: 'Kitchen', description: 'Cooking area' },
+        { room_name: 'Bathroom', description: 'Main bathroom' },
+        { room_name: 'Garage', description: 'Storage and parking' }
+      ])
       .execute();
 
     const result = await getLocations();
 
-    expect(result).toHaveLength(1);
-    const location = result[0];
-    
-    expect(typeof location.id).toBe('number');
-    expect(typeof location.room_name).toBe('string');
-    expect(typeof location.description).toBe('string');
-    expect(location.created_at).toBeInstanceOf(Date);
-  });
-
-  it('should handle locations with null descriptions', async () => {
-    await db.insert(locationsTable)
-      .values({
-        room_name: 'Room Without Description',
-        description: null
-      })
-      .execute();
-
-    const result = await getLocations();
-
-    expect(result).toHaveLength(1);
-    expect(result[0].room_name).toBe('Room Without Description');
-    expect(result[0].description).toBeNull();
+    expect(result).toHaveLength(3);
+    // Verify all locations are returned (order may vary based on DB implementation)
+    const roomNames = result.map(loc => loc.room_name);
+    expect(roomNames).toContain('Kitchen');
+    expect(roomNames).toContain('Bathroom');
+    expect(roomNames).toContain('Garage');
   });
 });

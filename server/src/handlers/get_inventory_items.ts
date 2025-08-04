@@ -6,13 +6,13 @@ import { eq } from 'drizzle-orm';
 
 export const getInventoryItems = async (): Promise<InventoryItem[]> => {
   try {
-    // Join inventory items with their locations to get complete data
+    // Join with locations to get complete data
     const results = await db.select()
       .from(inventoryItemsTable)
       .innerJoin(locationsTable, eq(inventoryItemsTable.location_id, locationsTable.id))
       .execute();
 
-    // Map joined results to inventory item format
+    // Map joined results to expected InventoryItem format
     return results.map(result => ({
       id: result.inventory_items.id,
       name: result.inventory_items.name,
@@ -30,7 +30,7 @@ export const getInventoryItems = async (): Promise<InventoryItem[]> => {
       updated_at: result.inventory_items.updated_at
     }));
   } catch (error) {
-    console.error('Failed to get inventory items:', error);
+    console.error('Failed to fetch inventory items:', error);
     throw error;
   }
 };

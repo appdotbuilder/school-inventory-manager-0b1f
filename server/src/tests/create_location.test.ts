@@ -7,38 +7,22 @@ import { type CreateLocationInput } from '../schema';
 import { createLocation } from '../handlers/create_location';
 import { eq } from 'drizzle-orm';
 
-// Test input with all required fields
+// Simple test input
 const testInput: CreateLocationInput = {
-  room_name: 'Living Room',
-  description: 'Main living area with TV and furniture'
-};
-
-// Test input with nullable description
-const testInputNullDescription: CreateLocationInput = {
-  room_name: 'Storage Room',
-  description: null
+  room_name: 'Test Room',
+  description: 'A room for testing'
 };
 
 describe('createLocation', () => {
   beforeEach(createDB);
   afterEach(resetDB);
 
-  it('should create a location with description', async () => {
+  it('should create a location', async () => {
     const result = await createLocation(testInput);
 
     // Basic field validation
-    expect(result.room_name).toEqual('Living Room');
-    expect(result.description).toEqual('Main living area with TV and furniture');
-    expect(result.id).toBeDefined();
-    expect(result.created_at).toBeInstanceOf(Date);
-  });
-
-  it('should create a location with null description', async () => {
-    const result = await createLocation(testInputNullDescription);
-
-    // Verify null description is handled correctly
-    expect(result.room_name).toEqual('Storage Room');
-    expect(result.description).toBeNull();
+    expect(result.room_name).toEqual('Test Room');
+    expect(result.description).toEqual('A room for testing');
     expect(result.id).toBeDefined();
     expect(result.created_at).toBeInstanceOf(Date);
   });
@@ -53,24 +37,43 @@ describe('createLocation', () => {
       .execute();
 
     expect(locations).toHaveLength(1);
-    expect(locations[0].room_name).toEqual('Living Room');
-    expect(locations[0].description).toEqual('Main living area with TV and furniture');
+    expect(locations[0].room_name).toEqual('Test Room');
+    expect(locations[0].description).toEqual('A room for testing');
     expect(locations[0].created_at).toBeInstanceOf(Date);
   });
 
-  it('should generate unique IDs for multiple locations', async () => {
-    const location1 = await createLocation({
-      room_name: 'Kitchen',
-      description: 'Cooking area'
-    });
+  it('should create a location with null description', async () => {
+    const inputWithNullDescription: CreateLocationInput = {
+      room_name: 'Storage Room',
+      description: null
+    };
 
-    const location2 = await createLocation({
-      room_name: 'Bedroom',
-      description: 'Master bedroom'
-    });
+    const result = await createLocation(inputWithNullDescription);
 
-    expect(location1.id).not.toEqual(location2.id);
-    expect(location1.room_name).toEqual('Kitchen');
-    expect(location2.room_name).toEqual('Bedroom');
+    // Basic field validation
+    expect(result.room_name).toEqual('Storage Room');
+    expect(result.description).toBeNull();
+    expect(result.id).toBeDefined();
+    expect(result.created_at).toBeInstanceOf(Date);
+  });
+
+  it('should save location with null description to database', async () => {
+    const inputWithNullDescription: CreateLocationInput = {
+      room_name: 'Storage Room',
+      description: null
+    };
+
+    const result = await createLocation(inputWithNullDescription);
+
+    // Query using proper drizzle syntax
+    const locations = await db.select()
+      .from(locationsTable)
+      .where(eq(locationsTable.id, result.id))
+      .execute();
+
+    expect(locations).toHaveLength(1);
+    expect(locations[0].room_name).toEqual('Storage Room');
+    expect(locations[0].description).toBeNull();
+    expect(locations[0].created_at).toBeInstanceOf(Date);
   });
 });

@@ -5,7 +5,6 @@ import { eq } from 'drizzle-orm';
 
 export const deleteInventoryItem = async (id: number): Promise<void> => {
   try {
-    // Delete the inventory item by ID
     const result = await db.delete(inventoryItemsTable)
       .where(eq(inventoryItemsTable.id, id))
       .execute();

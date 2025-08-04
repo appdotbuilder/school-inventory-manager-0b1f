@@ -6,16 +6,16 @@ import { eq, count } from 'drizzle-orm';
 export const deleteLocation = async (id: number): Promise<void> => {
   try {
     // Check if location exists
-    const existingLocations = await db.select()
+    const location = await db.select()
       .from(locationsTable)
       .where(eq(locationsTable.id, id))
       .execute();
 
-    if (existingLocations.length === 0) {
+    if (location.length === 0) {
       throw new Error(`Location with id ${id} not found`);
     }
 
-    // Check if location has inventory items
+    // Check if location has any inventory items
     const itemCount = await db.select({ count: count() })
       .from(inventoryItemsTable)
       .where(eq(inventoryItemsTable.location_id, id))

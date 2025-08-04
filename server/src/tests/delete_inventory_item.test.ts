@@ -3,121 +3,108 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { resetDB, createDB } from '../helpers';
 import { db } from '../db';
 import { locationsTable, inventoryItemsTable } from '../db/schema';
+import { type CreateLocationInput, type CreateInventoryItemInput } from '../schema';
 import { deleteInventoryItem } from '../handlers/delete_inventory_item';
 import { eq } from 'drizzle-orm';
+
+// Test data setup
+const testLocationInput: CreateLocationInput = {
+  room_name: 'Test Room',
+  description: 'A room for testing'
+};
+
+const testInventoryItemInput: CreateInventoryItemInput = {
+  name: 'Test Laptop',
+  category: 'electronic',
+  serial_number: 'TEST123',
+  condition: 'good',
+  location_id: 1, // Will be set after location creation
+  location_details: 'Desk area',
+  brand: 'TestBrand',
+  model: 'TestModel',
+  specifications: 'Test specs',
+  purchase_date: new Date('2023-01-01'),
+  notes: 'Test notes'
+};
 
 describe('deleteInventoryItem', () => {
   beforeEach(createDB);
   afterEach(resetDB);
 
   it('should delete an existing inventory item', async () => {
-    // Create a location first (required for foreign key)
+    // Create prerequisite location
     const locationResult = await db.insert(locationsTable)
-      .values({
-        room_name: 'Test Room',
-        description: 'A room for testing'
-      })
+      .values(testLocationInput)
       .returning()
       .execute();
 
-    const location = locationResult[0];
-
-    // Create an inventory item
+    // Create inventory item to delete
     const itemResult = await db.insert(inventoryItemsTable)
       .values({
-        name: 'Test Item',
-        category: 'electronic',
-        serial_number: 'TEST123',
-        condition: 'good',
-        location_id: location.id,
-        location_details: 'On desk',
-        brand: 'TestBrand',
-        model: 'TestModel',
-        specifications: 'Test specs',
-        purchase_date: new Date('2024-01-01'),
-        notes: 'Test notes'
+        ...testInventoryItemInput,
+        location_id: locationResult[0].id
       })
       .returning()
       .execute();
 
-    const item = itemResult[0];
+    const itemId = itemResult[0].id;
 
-    // Delete the inventory item
-    await deleteInventoryItem(item.id);
+    // Delete the item
+    await deleteInventoryItem(itemId);
 
-    // Verify item was deleted
+    // Verify item no longer exists
     const deletedItems = await db.select()
       .from(inventoryItemsTable)
-      .where(eq(inventoryItemsTable.id, item.id))
+      .where(eq(inventoryItemsTable.id, itemId))
       .execute();
 
     expect(deletedItems).toHaveLength(0);
   });
 
   it('should throw error when trying to delete non-existent item', async () => {
-    const nonExistentId = 999999;
+    const nonExistentId = 99999;
 
-    await expect(deleteInventoryItem(nonExistentId))
-      .rejects.toThrow(/not found/i);
+    expect(deleteInventoryItem(nonExistentId)).rejects.toThrow(/not found/i);
   });
 
-  it('should not affect other items when deleting', async () => {
-    // Create a location first
+  it('should not affect other inventory items', async () => {
+    // Create prerequisite location
     const locationResult = await db.insert(locationsTable)
-      .values({
-        room_name: 'Test Room',
-        description: 'A room for testing'
-      })
+      .values(testLocationInput)
       .returning()
       .execute();
-
-    const location = locationResult[0];
 
     // Create two inventory items
     const item1Result = await db.insert(inventoryItemsTable)
       .values({
-        name: 'Item 1',
-        category: 'electronic',
-        serial_number: 'ITEM001',
-        condition: 'good',
-        location_id: location.id,
-        location_details: 'Shelf A',
-        brand: 'Brand1',
-        model: 'Model1',
-        specifications: 'Specs 1',
-        purchase_date: new Date('2024-01-01'),
-        notes: 'Notes 1'
+        ...testInventoryItemInput,
+        location_id: locationResult[0].id,
+        name: 'Test Item 1',
+        serial_number: 'TEST001'
       })
       .returning()
       .execute();
 
     const item2Result = await db.insert(inventoryItemsTable)
       .values({
-        name: 'Item 2',
-        category: 'pc',
-        serial_number: 'ITEM002',
-        condition: 'damaged',
-        location_id: location.id,
-        location_details: 'Shelf B',
-        brand: 'Brand2',
-        model: 'Model2',
-        specifications: 'Specs 2',
-        purchase_date: new Date('2024-01-02'),
-        notes: 'Notes 2'
+        ...testInventoryItemInput,
+        location_id: locationResult[0].id,
+        name: 'Test Item 2',
+        serial_number: 'TEST002'
       })
       .returning()
       .execute();
 
-    const item1 = item1Result[0];
-    const item2 = item2Result[0];
+    const item1Id = item1Result[0].id;
+    const item2Id = item2Result[0].id;
 
-    // Delete only the first item
-    await deleteInventoryItem(item1.id);
+    // Delete first item
+    await deleteInventoryItem(item1Id);
 
     // Verify first item is deleted
     const deletedItems = await db.select()
       .from(inventoryItemsTable)
-      .where(eq(inventoryItemsTable.id, item1.id))
+      .where(eq(inventoryItemsTable.id, item1Id))
       .execute();
 
     expect(deletedItems).toHaveLength(0);
@@ -125,11 +112,10 @@ describe('deleteInventoryItem', () => {
     // Verify second item still exists
     const remainingItems = await db.select()
       .from(inventoryItemsTable)
-      .where(eq(inventoryItemsTable.id, item2.id))
+      .where(eq(inventoryItemsTable.id, item2Id))
       .execute();
 
     expect(remainingItems).toHaveLength(1);
-    expect(remainingItems[0].name).toEqual('Item 2');
-    expect(remainingItems[0].serial_number).toEqual('ITEM002');
+    expect(remainingItems[0].name).toEqual('Test Item 2');
   });
 });

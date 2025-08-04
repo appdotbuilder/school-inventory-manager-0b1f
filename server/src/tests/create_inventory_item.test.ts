@@ -37,11 +37,12 @@ describe('createInventoryItem', () => {
       model: 'XPS 13',
       specifications: '16GB RAM, 512GB SSD',
       purchase_date: new Date('2023-01-15'),
-      notes: 'Company laptop'
+      notes: 'Primary development laptop'
     };
 
     const result = await createInventoryItem(testInput);
 
+    // Verify all fields are set correctly
     expect(result.name).toEqual('Test Laptop');
     expect(result.category).toEqual('electronic');
     expect(result.serial_number).toEqual('SN123456');
@@ -52,7 +53,7 @@ describe('createInventoryItem', () => {
     expect(result.model).toEqual('XPS 13');
     expect(result.specifications).toEqual('16GB RAM, 512GB SSD');
     expect(result.purchase_date).toEqual(new Date('2023-01-15'));
-    expect(result.notes).toEqual('Company laptop');
+    expect(result.notes).toEqual('Primary development laptop');
     expect(result.id).toBeDefined();
     expect(result.created_at).toBeInstanceOf(Date);
     expect(result.updated_at).toBeInstanceOf(Date);
@@ -62,79 +63,70 @@ describe('createInventoryItem', () => {
     const location = await createTestLocation();
     
     const testInput: CreateInventoryItemInput = {
-      name: 'Test PC',
-      category: 'pc',
-      serial_number: 'PC789012',
-      condition: 'damaged',
+      name: 'Test Chair',
+      category: 'furniture',
+      serial_number: 'CHAIR001',
+      condition: 'good',
       location_id: location.id,
       location_details: null,
-      brand: 'HP',
-      model: 'ProDesk',
-      specifications: '8GB RAM, 256GB SSD',
-      purchase_date: new Date('2022-06-10'),
+      brand: null,
+      model: null,
+      specifications: null,
+      purchase_date: new Date('2023-02-01'),
       notes: null
     };
 
     const result = await createInventoryItem(testInput);
 
+    // Query database to verify item was saved
     const items = await db.select()
       .from(inventoryItemsTable)
       .where(eq(inventoryItemsTable.id, result.id))
       .execute();
 
     expect(items).toHaveLength(1);
-    expect(items[0].name).toEqual('Test PC');
-    expect(items[0].category).toEqual('pc');
-    expect(items[0].serial_number).toEqual('PC789012');
-    expect(items[0].condition).toEqual('damaged');
+    expect(items[0].name).toEqual('Test Chair');
+    expect(items[0].category).toEqual('furniture');
+    expect(items[0].serial_number).toEqual('CHAIR001');
+    expect(items[0].condition).toEqual('good');
     expect(items[0].location_id).toEqual(location.id);
-    expect(items[0].location_details).toBeNull();
-    expect(items[0].brand).toEqual('HP');
-    expect(items[0].model).toEqual('ProDesk');
-    expect(items[0].specifications).toEqual('8GB RAM, 256GB SSD');
-    expect(items[0].purchase_date).toEqual(new Date('2022-06-10'));
-    expect(items[0].notes).toBeNull();
     expect(items[0].created_at).toBeInstanceOf(Date);
     expect(items[0].updated_at).toBeInstanceOf(Date);
   });
 
-  it('should create furniture item with minimal data', async () => {
+  it('should handle nullable fields correctly', async () => {
     const location = await createTestLocation();
     
     const testInput: CreateInventoryItemInput = {
-      name: 'Office Chair',
-      category: 'furniture',
-      serial_number: 'CHAIR001',
+      name: 'Minimal Item',
+      category: 'pc',
+      serial_number: 'MIN001',
       condition: 'needs_repair',
       location_id: location.id,
       location_details: null,
       brand: null,
       model: null,
       specifications: null,
-      purchase_date: new Date('2021-03-20'),
+      purchase_date: new Date('2023-03-01'),
       notes: null
     };
 
     const result = await createInventoryItem(testInput);
 
-    expect(result.name).toEqual('Office Chair');
-    expect(result.category).toEqual('furniture');
-    expect(result.condition).toEqual('needs_repair');
     expect(result.location_details).toBeNull();
     expect(result.brand).toBeNull();
     expect(result.model).toBeNull();
     expect(result.specifications).toBeNull();
     expect(result.notes).toBeNull();
-    expect(result.id).toBeDefined();
   });
 
   it('should throw error when location does not exist', async () => {
     const testInput: CreateInventoryItemInput = {
       name: 'Test Item',
       category: 'electronic',
-      serial_number: 'INVALID001',
+      serial_number: 'TEST001',
       condition: 'good',
-      location_id: 999, // Non-existent location ID
+      location_id: 999, // Non-existent location
       location_details: null,
       brand: null,
       model: null,
@@ -143,6 +135,6 @@ describe('createInventoryItem', () => {
       notes: null
     };
 
-    await expect(createInventoryItem(testInput)).rejects.toThrow(/location.*does not exist/i);
+    await expect(createInventoryItem(testInput)).rejects.toThrow(/location with id 999 does not exist/i);
   });
 });

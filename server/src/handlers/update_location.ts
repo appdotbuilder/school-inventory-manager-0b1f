@@ -17,7 +17,7 @@ export const updateLocation = async (input: UpdateLocationInput): Promise<Locati
       updateData.description = input.description;
     }
 
-    // Update location record
+    // Perform update and return the updated record
     const result = await db.update(locationsTable)
       .set(updateData)
       .where(eq(locationsTable.id, input.id))
