@@ -1,11 +1,24 @@
 
+import { db } from '../db';
+import { inventoryItemsTable, locationsTable } from '../db/schema';
 import { type CreateInventoryItemInput, type InventoryItem } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export const createInventoryItem = async (input: CreateInventoryItemInput): Promise<InventoryItem> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new inventory item and persisting it in the database.
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+  try {
+    // Verify location exists before creating inventory item
+    const location = await db.select()
+      .from(locationsTable)
+      .where(eq(locationsTable.id, input.location_id))
+      .execute();
+
+    if (location.length === 0) {
+      throw new Error(`Location with id ${input.location_id} does not exist`);
+    }
+
+    // Insert inventory item record
+    const result = await db.insert(inventoryItemsTable)
+      .values({
         name: input.name,
         category: input.category,
         serial_number: input.serial_number,
@@ -16,8 +29,14 @@ export const createInventoryItem = async (input: CreateInventoryItemInput): Prom
         model: input.model,
         specifications: input.specifications,
         purchase_date: input.purchase_date,
-        notes: input.notes,
-        created_at: new Date(), // Placeholder date
-        updated_at: new Date() // Placeholder date
-    } as InventoryItem);
-}
+        notes: input.notes
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Inventory item creation failed:', error);
+    throw error;
+  }
+};

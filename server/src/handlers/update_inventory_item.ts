@@ -1,23 +1,61 @@
 
+import { db } from '../db';
+import { inventoryItemsTable, locationsTable } from '../db/schema';
 import { type UpdateInventoryItemInput, type InventoryItem } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export const updateInventoryItem = async (input: UpdateInventoryItemInput): Promise<InventoryItem> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is updating an existing inventory item in the database.
-    return Promise.resolve({
-        id: input.id,
-        name: input.name || 'Placeholder Item',
-        category: input.category || 'electronic',
-        serial_number: input.serial_number || 'PLACEHOLDER',
-        condition: input.condition || 'good',
-        location_id: input.location_id || 1,
-        location_details: input.location_details || null,
-        brand: input.brand || null,
-        model: input.model || null,
-        specifications: input.specifications || null,
-        purchase_date: input.purchase_date || new Date(),
-        notes: input.notes || null,
-        created_at: new Date(), // Placeholder date
-        updated_at: new Date() // Placeholder date
-    } as InventoryItem);
-}
+  try {
+    // Verify the item exists
+    const existingItem = await db.select()
+      .from(inventoryItemsTable)
+      .where(eq(inventoryItemsTable.id, input.id))
+      .execute();
+
+    if (existingItem.length === 0) {
+      throw new Error(`Inventory item with id ${input.id} not found`);
+    }
+
+    // If location_id is being updated, verify the location exists
+    if (input.location_id) {
+      const location = await db.select()
+        .from(locationsTable)
+        .where(eq(locationsTable.id, input.location_id))
+        .execute();
+
+      if (location.length === 0) {
+        throw new Error(`Location with id ${input.location_id} not found`);
+      }
+    }
+
+    // Build update object with only provided fields
+    const updateData: any = {};
+    
+    if (input.name !== undefined) updateData.name = input.name;
+    if (input.category !== undefined) updateData.category = input.category;
+    if (input.serial_number !== undefined) updateData.serial_number = input.serial_number;
+    if (input.condition !== undefined) updateData.condition = input.condition;
+    if (input.location_id !== undefined) updateData.location_id = input.location_id;
+    if (input.location_details !== undefined) updateData.location_details = input.location_details;
+    if (input.brand !== undefined) updateData.brand = input.brand;
+    if (input.model !== undefined) updateData.model = input.model;
+    if (input.specifications !== undefined) updateData.specifications = input.specifications;
+    if (input.purchase_date !== undefined) updateData.purchase_date = input.purchase_date;
+    if (input.notes !== undefined) updateData.notes = input.notes;
+    
+    // Always update the updated_at timestamp
+    updateData.updated_at = new Date();
+
+    // Update the inventory item
+    const result = await db.update(inventoryItemsTable)
+      .set(updateData)
+      .where(eq(inventoryItemsTable.id, input.id))
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Inventory item update failed:', error);
+    throw error;
+  }
+};

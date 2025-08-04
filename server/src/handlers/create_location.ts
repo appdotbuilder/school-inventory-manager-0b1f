@@ -1,13 +1,22 @@
 
+import { db } from '../db';
+import { locationsTable } from '../db/schema';
 import { type CreateLocationInput, type Location } from '../schema';
 
 export const createLocation = async (input: CreateLocationInput): Promise<Location> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new location/room and persisting it in the database.
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+  try {
+    // Insert location record
+    const result = await db.insert(locationsTable)
+      .values({
         room_name: input.room_name,
-        description: input.description,
-        created_at: new Date() // Placeholder date
-    } as Location);
-}
+        description: input.description
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Location creation failed:', error);
+    throw error;
+  }
+};
