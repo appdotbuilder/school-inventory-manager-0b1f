@@ -3,7 +3,7 @@ import { serial, text, pgTable, timestamp, integer, pgEnum } from 'drizzle-orm/p
 import { relations } from 'drizzle-orm';
 
 // Enums
-export const categoryEnum = pgEnum('category', ['electronic', 'pc', 'furniture']);
+export const categoryEnum = pgEnum('category', ['electronic', 'pc', 'furniture', 'room_asset', 'tool', 'peripheral']);
 export const conditionEnum = pgEnum('condition', ['good', 'damaged', 'needs_repair']);
 
 // Locations table

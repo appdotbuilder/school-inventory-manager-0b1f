@@ -2,7 +2,7 @@
 import { z } from 'zod';
 
 // Enums
-export const categoryEnum = z.enum(['electronic', 'pc', 'furniture']);
+export const categoryEnum = z.enum(['electronic', 'pc', 'furniture', 'room_asset', 'tool', 'peripheral']);
 export const conditionEnum = z.enum(['good', 'damaged', 'needs_repair']);
 
 // Location schemas

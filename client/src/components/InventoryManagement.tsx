@@ -184,6 +184,12 @@ export function InventoryManagement() {
         return 'bg-purple-100 text-purple-800';
       case 'furniture':
         return 'bg-green-100 text-green-800';
+      case 'room_asset':
+        return 'bg-orange-100 text-orange-800';
+      case 'tool':
+        return 'bg-red-100 text-red-800';
+      case 'peripheral':
+        return 'bg-cyan-100 text-cyan-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -228,7 +234,7 @@ export function InventoryManagement() {
           <Label htmlFor="category">Category *</Label>
           <Select
             value={formData.category}
-            onValueChange={(value: 'electronic' | 'pc' | 'furniture') =>
+            onValueChange={(value: 'electronic' | 'pc' | 'furniture' | 'room_asset' | 'tool' | 'peripheral') =>
               setFormData((prev: CreateInventoryItemInput) => ({ ...prev, category: value }))
             }
           >
@@ -239,6 +245,9 @@ export function InventoryManagement() {
               <SelectItem value="electronic">📱 Electronic</SelectItem>
               <SelectItem value="pc">💻 PC</SelectItem>
               <SelectItem value="furniture">🪑 Furniture</SelectItem>
+              <SelectItem value="room_asset">🏠 Room Asset</SelectItem>
+              <SelectItem value="tool">🔧 Tool</SelectItem>
+              <SelectItem value="peripheral">🖱️ Peripheral</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -413,7 +422,7 @@ export function InventoryManagement() {
           <span className="text-sm font-medium">Filters:</span>
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -421,6 +430,9 @@ export function InventoryManagement() {
             <SelectItem value="electronic">Electronic</SelectItem>
             <SelectItem value="pc">PC</SelectItem>
             <SelectItem value="furniture">Furniture</SelectItem>
+            <SelectItem value="room_asset">Room Asset</SelectItem>
+            <SelectItem value="tool">Tool</SelectItem>
+            <SelectItem value="peripheral">Peripheral</SelectItem>
           </SelectContent>
         </Select>
         <Select value={conditionFilter} onValueChange={setConditionFilter}>
@@ -442,7 +454,7 @@ export function InventoryManagement() {
             <SelectItem value="all">All Locations</SelectItem>
             {locations.map((location: Location) => (
               <SelectItem key={location.id} value={location.id.toString()}>
-                {location.room_name}
+                🏫 {location.room_name}
               </SelectItem>
             ))}
           </SelectContent>

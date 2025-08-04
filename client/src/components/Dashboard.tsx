@@ -49,6 +49,12 @@ export function Dashboard() {
         return 'bg-purple-100 text-purple-800';
       case 'furniture':
         return 'bg-green-100 text-green-800';
+      case 'room_asset':
+        return 'bg-orange-100 text-orange-800';
+      case 'tool':
+        return 'bg-red-100 text-red-800';
+      case 'peripheral':
+        return 'bg-cyan-100 text-cyan-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
